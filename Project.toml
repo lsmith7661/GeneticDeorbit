@@ -1,0 +1,16 @@
+name = "GeneticDeorbit"
+uuid = "79b0f302-fa61-4c36-ac94-ed7326b49fa9"
+authors = ["Liam <lsmith7661@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Evolutionary = "86b6b26d-c046-49b6-aa0b-5f0f74682bd6"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+SatelliteDynamicsLCS = "0e7c1a32-1b9f-5532-88a4-e668712d6a4c"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
