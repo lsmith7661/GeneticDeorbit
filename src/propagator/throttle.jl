@@ -9,7 +9,14 @@ function throttle(state::Array{<:Real,1}, center::Real, width::Real, switching_c
     hmag = norm(h)
     e = cross(v, h) / μ - r / rmag
     emag = norm(e)
-    θ = acos(dot(e, r) / (emag * rmag))
+    cosθ = dot(e, r) / (emag * rmag)
+    if cosθ > 1 # catch precision errors
+        θ = 0
+    elseif cosθ < -1
+        θ = 0
+    else
+        θ = acos(cosθ)
+    end
     if dot(r, v) < 0
         θ = 2 * pi - θ
     end
@@ -31,4 +38,4 @@ function throttle(state::Array{<:Real,1}, center::Real, width::Real, switching_c
         return 0.0
     end
 end
-throttle(state::Array{<:Real,1}) = throttle(state, pi, 45 * pi / 180, 300000)
+#throttle(state::Array{<:Real,1}) = throttle(state, pi, 45 * pi / 180, 300000)

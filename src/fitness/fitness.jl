@@ -10,13 +10,15 @@ struct trajectory
     states::AbstractArray{<:Real,2}     # rv states of the trajectory
     throttle::AbstractArray{<:Real,1}   # throttle state of the trajectory
     fitness::Real                       # the fitness of the given trajectory
+    time_fitness::Real                  # the fitness of the time objective only
+    thrust_fitness::Real                # the fitness of the thrust objective only
 end
 
 function eval_fitness(sc::spacecraft, weights::AbstractArray{<:Real,1})
 
     # Declare simulation initial epoch and state
     epoch0 = Epoch(2015, 4, 25, 12, 0, 0, 0.0)
-    epochf = epoch0 + 30 * 24 * 60 * 60
+    epochf = epoch0 + 60 * 24 * 60 * 60
     r0 = SVector{3,Float64}(2712241.37, -358426.60, -6318958.88) # m
     v0 = SVector{3,Float64}(3891.70, 6403.93, 1265.18) # m/s
     s0_eci = [r0[1], r0[2], r0[3], v0[1], v0[2], v0[3]]
@@ -37,10 +39,10 @@ function eval_fitness(sc::spacecraft, weights::AbstractArray{<:Real,1})
     T = Array{Float64}(undef, 1)
     for i = 1:size(eci)[2]
         state = eci[:, i]
-        push!(T, throttle(state))
+        push!(T, throttle(state,pi, sc.burn_duration, sc.switching_alt))
     end
     deleteat!(T, 1)
-    traj = trajectory(t, copy(eci'), T, 0)
+    traj = trajectory(t, copy(eci'), T, 0, 0, 0)
 
     # Calculate rmag for the states
     n = size(traj.states)[1]
@@ -72,9 +74,11 @@ function eval_fitness(sc::spacecraft, weights::AbstractArray{<:Real,1})
     # Weughts
     w_t = weights[1] # weight on total time 
     w_T = weights[2] # weight on total thrust
-    fitness = 1 * (w_t * t_total + w_T * T_total)
+    fitness1 = (w_t * t_total)
+    fitness2 = (w_T * T_total)
+    fitness = 1 * (fitness1 + fitness2)
 
-    return trajectory(t, copy(eci'), T, fitness)
+    return trajectory(t, copy(eci'), T, fitness, fitness1, fitness2)
 end
 eval_fitness(sc::spacecraft) = eval_fitness(sc, [0.5, 0.5])
 

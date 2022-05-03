@@ -1,5 +1,6 @@
 # Calculate the derivatives of the orbital paramaters for propagation
 # Gauss Variation of Parameters: Vallado 4th ed, pg 628
+#=
 
 struct COEs
     # Classical orbital elements
@@ -95,3 +96,5 @@ end
 initialstateCOES = COEs(6378000 + 600000, 0.003, 60 * 3.14 / 180, 0, 0, 0)
 force0 = RSW(0, 0, 0)
 force1 = RSW(0, 0.05 / 500, 0)
+
+=#

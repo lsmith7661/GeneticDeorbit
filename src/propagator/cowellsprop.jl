@@ -1,6 +1,8 @@
 # Calculate the derivatives of the orbital paramaters for propagation
 # Gauss Variation of Parameters: Vallado 4th ed, pg 628
 
+#=
+
 struct rv_eci
     # cartesian state
     r_m::SVector{3,Float64}   # position vector, meters
@@ -150,3 +152,4 @@ initialstate_rv_eci = rv_eci(r, v)
 thrust0_m_s_s = 0.0
 thrust1_m_s_s = 0.05 / 500
 
+=#
