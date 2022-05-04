@@ -74,7 +74,7 @@ function plotOptimal(traj::trajectory, genehist1::Vector{Any}, genehist2::Vector
     nskip = 500
     for i = 1:nskip:size(traj.states)[1]
         state = traj.states[i, :]
-        ti = traj.time[i]
+        ti = (traj.time[i] - traj.time[1])/60/60/24
         r = state[1:3]
         v = state[4:6]
         rmag = norm(r)
@@ -94,11 +94,11 @@ function plotOptimal(traj::trajectory, genehist1::Vector{Any}, genehist2::Vector
         push!(ecc, emag)
     end
 
-    p1 = plot(t, rp ./ 1e3, label="Perigee", lw=3, title="Altitude", xlabel="Time", ylabel="Altitude (km)")
-    plot!(p1, t, ra ./ 1e3, label="Apogee", lw=3, title="Altitude")
+    p1 = plot(t, rp ./ 1e3, label="Perigee", lw=3, title="Altitude Profile", xlabel="Time (Days)", ylabel="Altitude (km)")
+    plot!(p1, t, ra ./ 1e3, label="Apogee", lw=3, title="Altitude Profile")
     p2 = scatter([traj.thrust_fitness], [traj.time_fitness], xlims = (0,1), ylims = (0,1), label="Optimal Point", xlabel="Thrust Objective", ylabel="Time Objective", lw=3, title="Objective Function")
     
-    p3 = scatter(ones(size(genehist1[1])), genehist1[1]./1e3, label="Stopping Altitude", xlabel="Interation",  ylabel="Altitude (km)", lw=3, title="Perigee Stop Alt")
+    p3 = scatter(ones(size(genehist1[1])), genehist1[1]./1e3, label="Stopping Altitude", xlabel="Interation",  ylabel="Altitude (km)", lw=3, title="Switching Altitude")
     for i = 2:length(genehist1)
         scatter!(p3, i.*ones(size(genehist1[i])), genehist1[i]./1e3)
     end
@@ -164,14 +164,14 @@ function plotCircularDeorbit()
         push!(θvec,  θ)
     end
 
-    p1 = plot(t, rpvec ./ 1e3, label="Perigee", xlims = (0,60), lw=3, title="Altitude", xlabel="Time (days)", ylabel="Altitude (km)")
-    plot!(p1, t, ravec ./ 1e3, label="Apogee", xlims = (0,60), lw=3, title="Altitude")
+    p1 = plot(t, rpvec ./ 1e3, label="Perigee", lw=3, title="Altitude Profile", xlabel="Time (days)", ylabel="Altitude (km)")
+    plot!(p1, t, ravec ./ 1e3, label="Apogee", lw=3, title="Altitude Profile")
     
     ii = 500
     perm = sortperm(θvec[1:ii])
-    p2 = plot(θvec[perm].*180/pi, traj.throttle[perm], lw=3, ylim=(0,1),xlabel="True Anomaly (deg)", ylabel="Throttle", title="Throttle Profile", legend = false)
+    p2 = plot(θvec[perm].*180/pi, traj.throttle[perm], lw=3, ylim=(0,1), label="Throttle", xlabel="True Anomaly (deg)", ylabel="Throttle", title="Throttle Profile")
 
-    plot(p1, p2, layout=(1, 2), legend=false)
+    plot(p1, p2, layout=(1, 2), legend=true)
 
 end
 
@@ -226,16 +226,79 @@ function plotPerigeeDeorbit()
         push!(θvec,  θ)
     end
 
-    p1 = plot(t, rpvec ./ 1e3, label="Perigee", xlims = (0,60), lw=3, title="Altitude", xlabel="Time (days)", ylabel="Altitude (km)")
-    plot!(p1, t, ravec ./ 1e3, label="Apogee", xlims = (0,60),  lw=3, title="Altitude")
+    p1 = plot(t, rpvec ./ 1e3, label="Perigee", lw=3, title="Altitude Profile", xlabel="Time (days)", ylabel="Altitude (km)", legend=true)
+    plot!(p1, t, ravec ./ 1e3, label="Apogee", lw=3, title="Altitude Profile")
     
     ii = 500
     perm = sortperm(θvec[1:ii])
-    p2 = plot(θvec[perm].*180/pi, traj.throttle[perm], lw=3, ylim=(0,1),xlabel="True Anomaly (deg)", ylabel="Throttle", title="Throttle Profile", legend = false)
+    p2 = plot(θvec[perm].*180/pi, traj.throttle[perm], lw=3, ylim=(0,1), label="Throttle", xlabel="True Anomaly (deg)", ylabel="Throttle", title="Throttle Profile")
 
-    plot(p1, p2, layout=(1, 2), legend=false)
+    plot(p1, p2, layout=(1, 2), legend=true)
 
 end
+
+function plotPassiveDeorbit()
+    # Make Plots for a passive deorbit strategy
+    stopping_alt = 75e3 # stop low for dramatic atmosphere affect
+    burn_dur = 0.0  # burn around apogee
+    sc = spacecraft(stopping_alt, burn_dur)
+    traj = eval_fitness(sc)
+
+    # Calculate elements to plot
+    t = []
+    rpvec = []
+    ravec = []
+    θvec = []
+    n = size(traj.states)[1]
+    nskip = 1  
+    reentry = n # last entry if it s/c does not reenter
+    for i = 1:nskip:n
+        state = traj.states[i, :]
+        ti = (traj.time[i] - traj.time[1])/60/60/24
+        r = state[1:3]
+        v = state[4:6]
+        rmag = norm(r)
+        h = cross(r, v)
+        hmag = norm(h)
+        e = cross(v, h) / μ - r / rmag
+        emag = norm(e)
+        ra = hmag^2 / μ * (1 / 1 + emag)
+        rp = hmag^2 / μ * (1 / 1 - emag)
+        cosθ = dot(e, r) / (emag * rmag)
+        if cosθ > 1 # catch precision errors
+            θ = 0
+        elseif cosθ < -1
+            θ = 0
+        else
+            θ = acos(cosθ)
+        end
+        if dot(r, v) < 0
+            θ = 2 * pi - θ
+        end
+        
+        if ra < death_alt + Rₑ
+            # state where apogee broke loop
+            reentry = i
+            break
+        end
+
+        push!(t,ti)
+        push!(rpvec, rp - Rₑ)
+        push!(ravec, ra - Rₑ)
+        push!(θvec,  θ)
+    end
+
+    p1 = plot(t, rpvec ./ 1e3, label="Perigee", lw=3, title="Altitude Profile", xlabel="Time (days)", ylabel="Altitude (km)", legend=true)
+    plot!(p1, t, ravec ./ 1e3, label="Apogee", lw=3, title="Altitude Profile")
+    
+    ii = 500
+    perm = sortperm(θvec[1:ii])
+    p2 = plot(θvec[perm].*180/pi, traj.throttle[perm], lw=3, ylim=(0,1), label="Throttle", xlabel="True Anomaly (deg)", ylabel="Throttle", title="Throttle Profile")
+
+    plot(p1, p2, layout=(1, 2), legend=true)
+
+end
+
 
 function plotCircularAndPerigee()
     # Make Plots for a circular deorbit strategy

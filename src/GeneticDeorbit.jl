@@ -57,6 +57,7 @@ export
     plotOptimal,
     plotCircularDeorbit,
     plotPerigeeDeorbit,
-    plotCircularAndPerigee
+    plotCircularAndPerigee,
+    plotPassiveDeorbit
 
 end # module

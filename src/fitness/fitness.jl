@@ -18,7 +18,7 @@ function eval_fitness(sc::spacecraft, weights::AbstractArray{<:Real,1})
 
     # Declare simulation initial epoch and state
     epoch0 = Epoch(2015, 4, 25, 12, 0, 0, 0.0)
-    epochf = epoch0 + 60 * 24 * 60 * 60
+    epochf = epoch0 + 180 * 24 * 60 * 60
     r0 = SVector{3,Float64}(2712241.37, -358426.60, -6318958.88) # m
     v0 = SVector{3,Float64}(3891.70, 6403.93, 1265.18) # m/s
     s0_eci = [r0[1], r0[2], r0[3], v0[1], v0[2], v0[3]]
@@ -71,7 +71,7 @@ function eval_fitness(sc::spacecraft, weights::AbstractArray{<:Real,1})
     # Total thrust
     T_total = sum(traj.throttle[1:reentry])
 
-    # Weughts
+    # Weights
     w_t = weights[1] # weight on total time 
     w_T = weights[2] # weight on total thrust
     fitness1 = (w_t * t_total)
